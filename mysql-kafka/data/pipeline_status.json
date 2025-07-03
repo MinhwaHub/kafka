@@ -1,0 +1,18 @@
+{
+  "tx_collector_zd_erc721_holders_pipeline": {
+    "enabled": false,
+    "is_failed": false,
+    "restart_count": 0,
+    "last_processed_id": 0,
+    "table_name": "erc721_holders",
+    "kafka_topic": "tx_collector_zd_erc721_holders_topic"
+  },
+  "tx_collector_zd_erc20_holders_pipeline": {
+    "enabled": false,
+    "is_failed": false,
+    "restart_count": 0,
+    "last_processed_id": 0,
+    "table_name": "erc20_holders",
+    "kafka_topic": "tx_collector_zd_erc20_holders_topic"
+  }
+}

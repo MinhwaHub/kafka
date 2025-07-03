@@ -1,0 +1,83 @@
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.2
+    container_name: zookeeper
+    ports:
+      - "2182:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOO_4LW_COMMANDS_WHITELIST: "*"
+    # healthcheck: # Removed for simplicity, relying on Kafka's dependency
+    #   test: 'echo "ruok" | nc -w 2 localhost 2181 | grep "imok"'
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 5
+    #   start_period: 10s
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.2
+    container_name: kafka
+    ports:
+      # Exposes Kafka to the host machine on port 9095
+      - "9095:9092"
+    depends_on:
+      - zookeeper # Kafka depends on Zookeeper to be started
+    environment:
+      KAFKA_BROKER_ID: 1  # 개발용으로 브로커 1개 
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      # Listener for connections from within the Docker network (e.g., other containers)
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://0.0.0.0:9092
+      # Advertised listener for connections from the host machine (your Python script)
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9095
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1  # 복제 팩터 1개
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      # KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1 # Uncomment if you use transactions
+      # KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1 # Uncomment if you use transactions
+      # Confluent specific settings (optional, but good for cp-kafka images)
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
+    volumes:
+      - ./kafka_data:/var/lib/kafka/data # Persists Kafka data
+    # healthcheck: # Kafka healthcheck는 test.py 사용 시 필수는 아님 (필요시 추가)
+    #   test: /usr/bin/cub kafka-ready -b kafka:29092 1
+    #   interval: 30s
+    #   timeout: 20s
+    #   retries: 10
+    #   start_period: 90s
+
+# --- Kafka Connect Service (Not Used) ---
+#  connect:
+#    image: confluentinc/cp-kafka-connect:7.3.2
+#    container_name: kafka-connect
+#    ports:
+#      - "8083:8083"
+#    depends_on:
+#      - kafka
+#    environment:
+#      CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
+#      CONNECT_REST_ADVERTISED_HOST_NAME: "localhost"
+#      CONNECT_REST_PORT: 8083
+#      CONNECT_GROUP_ID: "connect-cluster-group"
+#      CONNECT_CONFIG_STORAGE_TOPIC: "__connect_configs"
+#      CONNECT_OFFSET_STORAGE_TOPIC: "__connect_offsets"
+#      CONNECT_STATUS_STORAGE_TOPIC: "__connect_status"
+#      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+#      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+#      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+#      CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+#      CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "false"
+#      CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+#      CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
+#      CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components,/connector-plugins"
+#      KAFKA_HEAP_OPTS: "-Xms512m -Xmx1g"
+#      AWS_PROFILE: "s3"
+#    volumes:
+#      - ./connector-plugins:/connector-plugins
+#      - ~/.aws:/root/.aws:ro
+
+volumes:
+  kafka_data:
+  # You might want to persist Connect's state too, though offsets are stored in Kafka
+  # connect_data: {} # Uncomment if you want to persist other Connect data/logs locally 

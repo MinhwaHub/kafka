@@ -1,0 +1,35 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+debug.log
+*.out
+*.err
+
+# Process ID files
+*.pid
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Kafka data
+data/kafka_data/
+
+# Pipeline status and temporary files
+/tmp/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db 
+
+docker/connector-plugins/
+legacy/
